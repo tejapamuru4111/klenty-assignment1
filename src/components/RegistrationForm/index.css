@@ -1,9 +1,9 @@
 .registration-form-container {
+  padding-bottom: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100%;
 }
 
 @media screen and (max-width: 767px) {
@@ -11,6 +11,7 @@
     flex-direction: column;
     justify-content: start;
     padding-top: 50px;
+    padding-bottom: 20px;
   }
 }
 
@@ -88,8 +89,12 @@
   outline: none;
 }
 
-.success-image {
-  width: 72px;
+.gender-field-card {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 3px;
 }
 
 .submit-button {
@@ -126,4 +131,14 @@
   font-size: 12px;
   line-height: 16px;
   color: #ff0b37;
+}
+
+.link-to-register {
+  align-self: center;
+  font-size: 14px;
+  margin-top: 3px;
+  margin-bottom: 0px;
+  font-family: 'Roboto';
+  color: #4817f7;
+  font-weight: bold;
 }
