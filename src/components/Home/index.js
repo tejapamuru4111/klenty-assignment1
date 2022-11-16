@@ -1,32 +1,49 @@
 import {Component} from 'react'
 import {v4 as uuidv4} from 'uuid'
 import {Redirect} from 'react-router-dom'
+import Loader from 'react-loader-spinner'
 
 import Cookies from 'js-cookie'
 import Popup from 'reactjs-popup'
 
 import './index.css'
 
-const quesAns = [
-  {
-    id: uuidv4(),
-    question: 'What is your name ?',
-    answers: ['My name is Teja'],
-  },
-  {
-    id: uuidv4(),
-    question: 'Define React ?',
-    answers: ['React is a framework'],
-  },
-]
+const apiConstants = {
+  initial: 'INITIAL',
+  loading: 'LOADING',
+  success: 'SUCCESS',
+  failure: 'FAILURE',
+}
 
 class Home extends Component {
   state = {
+    apiStatus: apiConstants.initial,
     searchVal: '',
-    qaList: quesAns,
+    qaList: [],
     inputAns: '',
     newQue: '',
     newQueAns: '',
+  }
+
+  componentDidMount() {
+    this.getQuestionAndAnswers()
+  }
+
+  getQuestionAndAnswers = async () => {
+    this.setState({apiStatus: apiConstants.loading})
+    const {searchVal} = this.state
+    const url = `http://localhost:3001/?search=${searchVal}`
+    const options = {
+      method: 'GET',
+    }
+
+    const response = await fetch(url, options)
+    if (response.ok) {
+      const data = await response.json()
+      this.setState({qaList: data, apiStatus: apiConstants.success})
+    } else {
+      this.setState({apiStatus: apiConstants.failure})
+    }
   }
 
   onSearchQuestion = event => {
@@ -37,19 +54,25 @@ class Home extends Component {
   }
 
   onClickSaveClose = event => {
-    const {inputAns, qaList} = this.state
-    const updateAns = qaList.map(item => {
-      if (item.id === event.target.value) {
-        const newItem = {
-          id: item.id,
-          question: item.question,
-          answers: [...item.answers, inputAns],
-        }
-        return newItem
-      }
-      return item
-    })
-    this.setState({qaList: updateAns, inputAns: ''})
+    const {inputAns} = this.state
+    const jwtToken = Cookies.get('login_token')
+    // fetching post method for question and answer
+    const questionDetails = {
+      f_id: event.target.value,
+      ans: inputAns,
+    }
+    const url = 'http://localhost:3001/'
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(questionDetails),
+      headers: {
+        authorization: `Bearer ${jwtToken}`,
+      },
+    }
+    const response = fetch(url, options)
+    if (response.ok) {
+      this.setState({inputAns: ''}, this.getQuestionAndAnswers())
+    }
   }
 
   onChangeAns = event => {
@@ -60,17 +83,26 @@ class Home extends Component {
 
   onAddQuestion = () => {
     const {newQue, newQueAns} = this.state
-    const questionItem = {
-      id: uuidv4(),
-      question: newQue,
-      answers: [newQueAns],
+    const jwtToken = Cookies.get('login_token')
+    // fetching post method for question and answer
+    const uid = uuidv4()
+    const questionDetails = {
+      f_id: uid,
+      que: newQue,
+      ans: newQueAns,
     }
-
-    this.setState(prevState => ({
-      qaList: [...prevState.qaList, questionItem],
-      newQue: '',
-      newQueAns: '',
-    }))
+    const url = 'http://localhost:3001/'
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(questionDetails),
+      headers: {
+        authorization: `Bearer ${jwtToken}`,
+      },
+    }
+    const response = fetch(url, options)
+    if (response.ok) {
+      this.setState({newQue: '', newQueAns: ''}, this.getQuestionAndAnswers())
+    }
   }
 
   onChangeQue = event => {
@@ -87,11 +119,178 @@ class Home extends Component {
     history.replace('/login')
   }
 
-  render() {
-    const {qaList, searchVal} = this.state
-    const filteredList = qaList.filter(item =>
-      item.question.toLowerCase().includes(searchVal.toLowerCase()),
+  renderHomePage = () => {
+    const {qaList} = this.state
+    return (
+      <div className="home-questions-container">
+        {qaList.map(task => (
+          <ol
+            key={task.faqId}
+            value={task.faqId}
+            className="home-question-card"
+          >
+            <h1 className="home-question">{task.question}</h1>
+            {task.answers.map(ans => (
+              <li key={ans.ans_id} className="home-question-answer">
+                {ans.answer}
+              </li>
+            ))}
+            <Popup
+              modal
+              trigger={
+                <button
+                  className="add-answer-button"
+                  type="button"
+                  onClick={this.onClickAddAnswer}
+                >
+                  Add Answer
+                </button>
+              }
+            >
+              {close => {
+                const {inputAns} = this.state
+                return (
+                  <>
+                    <div className="popup-container">
+                      <textarea
+                        cols={50}
+                        rows={10}
+                        onChange={this.onChangeAns}
+                        value={inputAns}
+                        className="answer-text-field"
+                        placeholder="Type your answer"
+                      />
+                      <div>
+                        <button
+                          type="button"
+                          className="popup-button"
+                          value={task.faqId}
+                          onClick={this.onClickSaveClose}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="popup-button"
+                          onClick={() => close()}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )
+              }}
+            </Popup>
+          </ol>
+        ))}
+        <p className="home-question-card-msg">
+          Note :- Click on the add answer button to answer
+        </p>
+      </div>
     )
+  }
+
+  renderAddNewQuestion = () => (
+    <>
+      <Popup
+        modal
+        trigger={
+          <button
+            type="button"
+            className="add-question-button"
+            onClick={this.onAddQuestion}
+          >
+            Add Question
+          </button>
+        }
+      >
+        {close => {
+          const {newQue, newQueAns} = this.state
+
+          return (
+            <>
+              <div className="popup-container">
+                <input
+                  type="text"
+                  value={newQue}
+                  onChange={this.onChangeQue}
+                  className="home-question-input"
+                  placeholder="Type your Question"
+                />
+                <textarea
+                  cols={50}
+                  rows={10}
+                  value={newQueAns}
+                  onChange={this.onChangeNewQueAns}
+                  className="answer-text-field"
+                  placeholder="Type your answer"
+                />
+                <div>
+                  <button
+                    className="popup-button"
+                    type="button"
+                    onClick={this.onAddQuestion}
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    className="popup-button"
+                    onClick={() => close()}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </>
+          )
+        }}
+      </Popup>
+    </>
+  )
+
+  renderLoader = () => (
+    <>
+      <div data-testid="loader">
+        <Loader type="ThreeDots" color="#222222" height="50" width="50" />
+      </div>
+    </>
+  )
+
+  onRetry = () => {
+    this.getQuestionAndAnswers()
+  }
+
+  renderFailureView = () => (
+    <>
+      <p>Something went wrong Try again.</p>
+      <button
+        type="button"
+        className="home-retry-button"
+        onClick={this.onRetry}
+      >
+        Retry
+      </button>
+    </>
+  )
+
+  renderAllFunctions = () => {
+    const {apiStatus} = this.state
+    switch (apiStatus) {
+      case apiConstants.success:
+        return this.renderHomePage()
+      case apiConstants.loading:
+        return this.renderLoader()
+      case apiConstants.failure:
+        return this.renderFailureView()
+      default:
+        return null
+    }
+  }
+
+  render() {
+    const {searchVal} = this.state
 
     const token = Cookies.get('login_token')
     if (token === undefined) {
@@ -121,121 +320,9 @@ class Home extends Component {
           </button>
         </div>
         <div className="home-questions-container">
-          {filteredList.map(task => (
-            <ol key={task.id} id={task.id} className="home-question-card">
-              <Popup
-                modal
-                trigger={
-                  <button
-                    type="button"
-                    className="home-question-button"
-                    onClick={this.onClickQuestion}
-                  >
-                    {task.question}
-                  </button>
-                }
-              >
-                {close => {
-                  const {inputAns} = this.state
-                  return (
-                    <>
-                      <div className="popup-container">
-                        <textarea
-                          cols={50}
-                          rows={10}
-                          onChange={this.onChangeAns}
-                          value={inputAns}
-                          className="answer-text-field"
-                          placeholder="Type your answer"
-                        />
-                        <div>
-                          <button
-                            type="button"
-                            className="popup-button"
-                            value={task.id}
-                            onClick={this.onClickSaveClose}
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            className="popup-button"
-                            onClick={() => close()}
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )
-                }}
-              </Popup>
-              {task.answers.map(ans => (
-                <li key={ans} className="home-question-answer">
-                  {ans}
-                </li>
-              ))}
-            </ol>
-          ))}
-          <p className="home-question-card-msg">
-            Note :- Tap on the question to answer
-          </p>
+          {this.renderAllFunctions()}
         </div>
-
-        <Popup
-          modal
-          trigger={
-            <button
-              type="button"
-              className="add-question-button"
-              onClick={this.onAddQuestion}
-            >
-              Add Question
-            </button>
-          }
-        >
-          {close => {
-            const {newQue, newQueAns} = this.state
-
-            return (
-              <>
-                <div className="popup-container">
-                  <input
-                    type="text"
-                    value={newQue}
-                    onChange={this.onChangeQue}
-                    className="home-question-input"
-                    placeholder="Type your Question"
-                  />
-                  <textarea
-                    cols={50}
-                    rows={10}
-                    value={newQueAns}
-                    onChange={this.onChangeNewQueAns}
-                    className="answer-text-field"
-                    placeholder="Type your answer"
-                  />
-                  <div>
-                    <button
-                      className="popup-button"
-                      type="button"
-                      onClick={this.onAddQuestion}
-                    >
-                      Add
-                    </button>
-                    <button
-                      type="button"
-                      className="popup-button"
-                      onClick={() => close()}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </>
-            )
-          }}
-        </Popup>
+        {this.renderAddNewQuestion()}
       </div>
     )
   }

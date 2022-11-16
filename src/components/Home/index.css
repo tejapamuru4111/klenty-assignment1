@@ -54,7 +54,7 @@
   border-radius: 20px;
   margin-top: 10px;
   margin-bottom: 10px;
-  padding: 40px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -65,23 +65,27 @@
   padding-right: 0px;
 }
 
-.home-question-button {
-  background-color: transparent;
-  border: none;
+.home-question {
   color: #222222;
-  font-size: 20px;
-  font-weight: bold;
   font-family: 'Roboto';
-  padding-left: 0px;
-  margin-left: 0px;
+  font-size: 22px;
 }
 
 .home-question-answer {
   color: #222222;
-  font-size: 15px;
+  font-size: 17px;
   font-family: 'Roboto';
-  margin-left: 25px;
+  margin-left: 20px;
   padding-top: 5px;
+}
+
+@media screen and (max-width: 767px) {
+  .home-question {
+    font-size: 18px;
+  }
+  .home-question-answer {
+    font-size: 13px;
+  }
 }
 
 .add-question-button {
@@ -119,6 +123,21 @@
   outline: none;
 }
 
+.add-answer-button {
+  font-family: 'Roboto';
+  font-size: 12px;
+  color: #ffffff;
+  padding: 8px 16px;
+  margin-top: 20px;
+  margin-bottom: 2px;
+  background-color: #bcd83f;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  margin: 10px;
+}
+
 .popup-button {
   font-family: 'Roboto';
   font-size: 12px;
@@ -146,6 +165,22 @@
   padding: 8px 16px 8px 16px;
   outline: none;
   align-self: flex-start;
+}
+
+.home-retry-button {
+  align-self: flex-start;
+  font-family: 'Roboto';
+  font-size: 12px;
+  color: #ffffff;
+  padding: 8px 16px;
+  margin-top: 20px;
+  margin-bottom: 2px;
+  background-color: #fc1fba;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  margin: 10px;
 }
 
 .home-question-card-msg {
